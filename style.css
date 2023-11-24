@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito&display=swap');
+
+html, body {
+    margin: 0px;
+    padding: 0px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+body {
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.2rem;
+    background: lightgrey;
+}
+
+canvas {
+    width: 1280px;
+    height: 720px;
+}
