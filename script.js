@@ -1,11 +1,17 @@
 (() => {
 
+    // Constants
     const canvas = document.querySelector("canvas");
     const ctx = canvas.getContext('2d');
     canvas.width = "1280px";
     canvas.height = "720px";
+    const MOVE_SPEED = 8;
+    const center = {
+        x: 1280/2,
+        y: 720/2
+    };
 
-    // module aliases
+    // Module aliases
     var Engine = Matter.Engine,
         Render = Matter.Render,
         Runner = Matter.Runner,
@@ -15,14 +21,14 @@
         Events = Matter.Events,
         Constraint = Matter.Constraint;
 
-    // create an engine
+    // Engine
     var engine = Engine.create({
         gravity: {
             scale: 0
         }
     });
 
-    // create a renderer
+    // Renderer
     var render = Render.create({
         canvas: canvas,
         engine: engine,
@@ -34,7 +40,8 @@
         }
     });
 
-    var player = Bodies.circle(640, 360, 40, {
+    // Bodies
+    var player = Bodies.circle(center.x, center.y, 40, {
         render: {
             fillStyle: '#DDD',
             strokeStyle: '#777', 
@@ -50,19 +57,23 @@
         }
     });
 
-    // add all of the bodies to the world
+    // Add Bodies to world
     Composite.add(engine.world, [player, wall]);
 
-    // run the renderer
+    // Run Renderer
     Render.run(render);
 
-    // create runner
+    // Runner
     var runner = Runner.create();
 
-    // run the engine
+    // Run Engine
     Runner.run(runner, engine);
 
-    const mouse = Mouse.create(render.canvas);
+    // Track
+    let offset = {
+        x: center.x,
+        y: center.y
+    };
 
     const keys = {
         'up': false,
@@ -87,48 +98,73 @@
         if (keys['left']) {
             vec.x = -1;
         }
-        const speed = 8;
         const nvec = Matter.Vector.mult(
             Matter.Vector.normalise(vec),
-            speed
+            MOVE_SPEED
         );
         Matter.Body.setVelocity(player, nvec);
+    });
+
+    Events.on(render, "beforeRender", ({timestamp}) => {
+        // Camera
+        ctx.translate(
+            offset.x - player.position.x, 
+            offset.y - player.position.y
+        );
+        offset = {
+            x: player.position.x,
+            y: player.position.y
+        };
     });
 
     Events.on(render, "afterRender", ({timestamp}) => {
         ctx.fillStyle = "#DDD";
         ctx.strokeStyle = "#777";
+        ctx.lineWidth = 2;
+
         const gun = {
             width: 10,
             height: 30
         };
-        
-        //ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         const {pos, rot, aimDir} = aimInfo();
+        ctx.save();
         ctx.translate(pos.x, pos.y);
         ctx.rotate(rot);
+        
         ctx.fillRect(-gun.width/2, -gun.height/2, gun.width, gun.height);
-        ctx.lineWidth = 2;
         ctx.strokeRect(-gun.width/2, -gun.height/2, gun.width, gun.height);
-        ctx.rotate(-rot);
-        ctx.translate(-pos.x, -pos.y);
+        ctx.restore();
 
         const pt = rayCast(
             Matter.Vector.add(
                 pos,
-                Matter.Vector.mult(aimDir, 15)
+                Matter.Vector.mult(aimDir, gun.height/2)
             ), 
             aimDir
         );
+
+        // Debug paint target
         if (pt) {
             ctx.fillStyle = "green";
-            ctx.fillRect(pt.x - 5, pt.y - 5, 10, 10);
+            ctx.fillRect(pt.x - gun.width/2, pt.y - gun.width/2, gun.width, gun.width);
         }
     });
 
     //
     // Helpers
     //
+    const m = Mouse.create(render.canvas);
+    function mouse() {
+        const offset = {
+            x: player.position.x - center.x,
+            y: player.position.y - center.y
+        }
+        return {
+            x: m.position.x + offset.x,
+            y: m.position.y + offset.y
+        };
+    }
     function rayCast(startPoint, normal) {
         const DIST = 1500;
         let lo = 0;
@@ -163,7 +199,7 @@
         );
     }
     function aimInfo() {
-        const m = mouse.position;
+        const m = mouse();
         const p = player.position;
         const vec = Matter.Vector.sub(m, p);
         const angle = Math.atan2(vec.y, vec.x);
@@ -180,7 +216,6 @@
             aimDir: Matter.Vector.normalise(Matter.Vector.sub(m, p))
         };
     }
-
     function listenForKeys() {
         const lookup = {
             "ArrowUp": "up",
@@ -201,7 +236,7 @@
             keys[lookup[e.code]] = false;
         });
         window.addEventListener("mousedown", e => {
-            const pos = mouse.position;
+            const pos = mouse();
             //console.log(pos)
         });
         window.addEventListener("mousemove", e => {
