@@ -95,6 +95,73 @@
         Matter.Body.setVelocity(player, nvec);
     });
 
+    Events.on(render, "afterRender", ({timestamp}) => {
+        ctx.fillStyle = "#DDD";
+        ctx.strokeStyle = "#777";
+        const gun = {
+            width: 10,
+            height: 30
+        };
+        
+        //ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const {pos, rot, aimDir} = aimInfo();
+        ctx.translate(pos.x, pos.y);
+        ctx.rotate(rot);
+        ctx.fillRect(-gun.width/2, -gun.height/2, gun.width, gun.height);
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-gun.width/2, -gun.height/2, gun.width, gun.height);
+        ctx.rotate(-rot);
+        ctx.translate(-pos.x, -pos.y);
+
+        const pt = rayCast(
+            Matter.Vector.add(
+                pos,
+                Matter.Vector.mult(aimDir, 15)
+            ), 
+            aimDir
+        );
+        if (pt) {
+            ctx.fillStyle = "green";
+            ctx.fillRect(pt.x - 5, pt.y - 5, 10, 10);
+        }
+    });
+
+    //
+    // Helpers
+    //
+    function rayCast(startPoint, normal) {
+        const DIST = 1500;
+        let lo = 0;
+        let hi = DIST;
+        let mi = (lo + hi)/2;
+
+        const check = (delta) => {
+            const coll = Matter.Query.ray([wall], startPoint, 
+                Matter.Vector.add(
+                    startPoint,
+                    Matter.Vector.mult(normal, delta)
+                )
+            );
+            return coll.length > 0;
+        };
+
+        if (!check(DIST)) {
+            return null;
+        }
+
+        while (lo < hi) {
+            mi = (lo + hi)/2;
+            if(check(mi)) {
+                hi = mi - 1;
+            } else {
+                lo = mi + 1;
+            }
+        }
+        return Matter.Vector.add(
+            startPoint,
+            Matter.Vector.mult(normal, mi)
+        );
+    }
     function aimInfo() {
         const m = mouse.position;
         const p = player.position;
@@ -109,27 +176,10 @@
                     rad * Math.sin(angle),
                 )
             ),
-            rot: angle + Math.PI/2
+            rot: angle + Math.PI/2,
+            aimDir: Matter.Vector.normalise(Matter.Vector.sub(m, p))
         };
     }
-
-    ctx.fillStyle = "#DDD";
-    ctx.strokeStyle = "#777";
-    Events.on(render, "afterRender", ({timestamp}) => {
-        const gun = {
-            width: 10,
-            height: 30
-        };
-        //ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const {pos, rot} = aimInfo();
-        ctx.translate(pos.x, pos.y);
-        ctx.rotate(rot);
-        ctx.fillRect(-gun.width/2, -gun.height/2, gun.width, gun.height);
-        ctx.lineWidth = 2;
-        ctx.strokeRect(-gun.width/2, -gun.height/2, gun.width, gun.height);
-        ctx.rotate(-rot);
-        ctx.translate(-pos.x, -pos.y);
-    });
 
     function listenForKeys() {
         const lookup = {
@@ -152,7 +202,7 @@
         });
         window.addEventListener("mousedown", e => {
             const pos = mouse.position;
-            
+            //console.log(pos)
         });
         window.addEventListener("mousemove", e => {
 
