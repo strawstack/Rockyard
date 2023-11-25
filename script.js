@@ -64,9 +64,6 @@
 
     const mouse = Mouse.create(render.canvas);
 
-    // Matter.Vector.create(x, y)
-    // Matter.Body.setVelocity(body, velocity)
-
     const keys = {
         'up': false,
         'right': false,
@@ -98,21 +95,40 @@
         Matter.Body.setVelocity(player, nvec);
     });
 
+    function aimInfo() {
+        const m = mouse.position;
+        const p = player.position;
+        const vec = Matter.Vector.sub(m, p);
+        const angle = Math.atan2(vec.y, vec.x);
+        const rad = player.circleRadius;
+        return {
+            pos: Matter.Vector.add(
+                p,
+                Matter.Vector.create(
+                    rad * Math.cos(angle),
+                    rad * Math.sin(angle),
+                )
+            ),
+            rot: angle + Math.PI/2
+        };
+    }
+
     ctx.fillStyle = "#DDD";
     ctx.strokeStyle = "#777";
     Events.on(render, "afterRender", ({timestamp}) => {
-        const pos = player.position;
         const gun = {
             width: 10,
-            height: 30,
-            offset: {
-                x: 0, 
-                y: -40
-            }
+            height: 30
         };
-        ctx.fillRect(pos.x - gun.width/2, pos.y - gun.height/2 + gun.offset.y, gun.width, gun.height);
+        //ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const {pos, rot} = aimInfo();
+        ctx.translate(pos.x, pos.y);
+        ctx.rotate(rot);
+        ctx.fillRect(-gun.width/2, -gun.height/2, gun.width, gun.height);
         ctx.lineWidth = 2;
-        ctx.strokeRect(pos.x - gun.width/2, pos.y - gun.height/2 + gun.offset.y, gun.width, gun.height);
+        ctx.strokeRect(-gun.width/2, -gun.height/2, gun.width, gun.height);
+        ctx.rotate(-rot);
+        ctx.translate(-pos.x, -pos.y);
     });
 
     function listenForKeys() {
@@ -133,6 +149,13 @@
         });
         window.addEventListener("keyup", e => {
             keys[lookup[e.code]] = false;
+        });
+        window.addEventListener("mousedown", e => {
+            const pos = mouse.position;
+            
+        });
+        window.addEventListener("mousemove", e => {
+
         });        
     }
 
