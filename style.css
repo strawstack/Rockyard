@@ -12,10 +12,11 @@ html, body {
 body {
     font-family: 'Nunito', sans-serif;
     font-size: 1.2rem;
-    background: lightgrey;
 }
 
 canvas {
     width: 1280px;
     height: 720px;
+    border: 2px solid #777;
+    border-radius: 4px;
 }
