@@ -10,6 +10,8 @@
         x: 1280/2,
         y: 720/2
     };
+    const SHOOT_FRAMES = 2;
+    const MAX_SHOOT_DIST = 1500;
 
     // Module aliases
     var Engine = Matter.Engine,
@@ -74,7 +76,6 @@
         x: center.x,
         y: center.y
     };
-
     const keys = {
         'up': false,
         'right': false,
@@ -82,6 +83,8 @@
         'left': false,
         'action': false
     };
+    let shoot = 0;
+
     listenForKeys();
 
     Events.on(runner, "tick", ({timestamp}) => {
@@ -128,19 +131,22 @@
         };
 
         const {pos, rot, aimDir} = aimInfo();
+        
+        // Rotate gun
         ctx.save();
         ctx.translate(pos.x, pos.y);
         ctx.rotate(rot);
-        
         ctx.fillRect(-gun.width/2, -gun.height/2, gun.width, gun.height);
         ctx.strokeRect(-gun.width/2, -gun.height/2, gun.width, gun.height);
         ctx.restore();
 
+        // Calculate target
+        const gun_front = Matter.Vector.add(
+            pos,
+            Matter.Vector.mult(aimDir, gun.height/2)
+        );
         const pt = rayCast(
-            Matter.Vector.add(
-                pos,
-                Matter.Vector.mult(aimDir, gun.height/2)
-            ), 
+            gun_front,
             aimDir
         );
 
@@ -149,6 +155,19 @@
             ctx.fillStyle = "green";
             ctx.fillRect(pt.x - gun.width/2, pt.y - gun.width/2, gun.width, gun.width);
         }
+
+        if (shoot > 0) {
+            shoot -= 1;
+            ctx.beginPath();
+            ctx.moveTo(gun_front.x, gun_front.y);
+            const end_point = Matter.Vector.add(
+                pos,
+                Matter.Vector.mult(aimDir, MAX_SHOOT_DIST)
+            );
+            ctx.lineTo(end_point.x, end_point.y);
+            ctx.stroke();
+        }
+
     });
 
     //
@@ -166,9 +185,8 @@
         };
     }
     function rayCast(startPoint, normal) {
-        const DIST = 1500;
         let lo = 0;
-        let hi = DIST;
+        let hi = MAX_SHOOT_DIST;
         let mi = (lo + hi)/2;
 
         const check = (delta) => {
@@ -181,7 +199,7 @@
             return coll.length > 0;
         };
 
-        if (!check(DIST)) {
+        if (!check(MAX_SHOOT_DIST)) {
             return null;
         }
 
@@ -237,7 +255,7 @@
         });
         window.addEventListener("mousedown", e => {
             const pos = mouse();
-            //console.log(pos)
+            shoot = SHOOT_FRAMES;
         });
         window.addEventListener("mousemove", e => {
 
