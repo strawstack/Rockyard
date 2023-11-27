@@ -43,7 +43,7 @@ function path() {
 
             } else if (h % 2 === 1 && (w % 2 === 1)) {
                 row.push(" ");
-                
+
             } else {
                 const ww = Math.floor(w/2);
                 const hh = Math.floor(h/2);
@@ -97,24 +97,57 @@ function path() {
     function union_find() {
         const rooms = {}; // Rooms point to group they are in
         
+        /*
         for (let h = 0; h < HEIGHT; h++) {
             for (let w = 0; w < WIDTH; w++) {
                 const hh = hash({x: w, y: h});
                 rooms[hh] = hh;
             }
-        }
+        } */
 
         function union(a, b) {
-            return null;
+            const g1 = find(a);
+            const g2 = find(b);
+            rooms[g1] = g2;
         }
         function find(a) {
-            return null;
+            let g = a;
+            while (rooms[g] != g) {
+                g = rooms[g];
+            }
+            rooms[a] = g;
+            return g;
         }
 
-        return {
-            union,
-            find
-        };
+        function test() {
+            for (let i = 0; i < 10; i++) {
+                rooms[i] = i;
+            }
+            console.log(find(0));
+            console.log(find(4));
+
+            union(0, 2);
+            union(0, 4);
+            union(4, 6);
+            
+            union(1, 3);
+            union(3, 5);
+
+            console.log(find(4));
+            console.log(find(1));
+
+            union(0, 5);
+
+            console.log("here");
+            for (let i = 0; i < 10; i++) {
+                console.log(find(i));
+            }
+
+        }
+        test();
+        
+        //return {union, find};
+        return {union: () => {}, find: () => {}};
     }
 }
 path();
