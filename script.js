@@ -2,16 +2,20 @@
 
     // Constants
     const canvas = document.querySelector("canvas");
+    const width = 1280;
+    const height = 720;
+    canvas.width = `${width}px`;
+    canvas.height = `${height}px`;
+    
     const ctx = canvas.getContext('2d');
-    canvas.width = "1280px";
-    canvas.height = "720px";
+    
+    const MAX_SHOOT_DIST = Math.sqrt( Math.pow(width, 2) + Math.pow(height, 2) );
+    const SHOOT_FRAMES = 2;
     const MOVE_SPEED = 8;
     const center = {
-        x: 1280/2,
-        y: 720/2
+        x: width/2,
+        y: height/2
     };
-    const SHOOT_FRAMES = 2;
-    const MAX_SHOOT_DIST = 1500;
 
     // Module aliases
     var Engine = Matter.Engine,
@@ -35,8 +39,8 @@
         canvas: canvas,
         engine: engine,
         options: {
-            width: 1280,
-            height: 720,
+            width: width,
+            height: height,
             wireframes: false,
             background: 'transparent'
         }
@@ -50,17 +54,59 @@
             lineWidth: 4
         }
     });
-    var wall = Bodies.rectangle(400, 200, 80, 80, { 
-        isStatic: true,
-        render: {
-            fillStyle: '#AAA',
-            strokeStyle: '#777', 
-            lineWidth: 4
-        }
-    });
+    
+    const SIZE = {
+        long: 120,
+        short: 40
+    };
+    const walls = [];
+
+    walls.push(
+        Bodies.rectangle(400 - 2 * SIZE.loaang, 200, SIZE.short, SIZE.short, { 
+            isStatic: true,
+            render: {
+                fillStyle: '#AAA',
+                strokeStyle: '#777', 
+                lineWidth: 4
+            }
+        })
+    );
+
+    walls.push(
+        Bodies.rectangle(400 - SIZE.long, 200, SIZE.long, SIZE.short, { 
+            isStatic: true,
+            render: {
+                fillStyle: '#AAA',
+                strokeStyle: '#777', 
+                lineWidth: 4
+            }
+        })
+    );
+
+    walls.push(
+        Bodies.rectangle(400, 200, SIZE.long, SIZE.short, { 
+            isStatic: true,
+            render: {
+                fillStyle: '#AAA',
+                strokeStyle: '#777', 
+                lineWidth: 4
+            }
+        })
+    );
+
+    walls.push(
+        Bodies.rectangle(400 + SIZE.long, 200, SIZE.long, SIZE.short, { 
+            isStatic: true,
+            render: {
+                fillStyle: '#AAA',
+                strokeStyle: '#777', 
+                lineWidth: 4
+            }
+        })
+    );
 
     // Add Bodies to world
-    Composite.add(engine.world, [player, wall]);
+    Composite.add(engine.world, [player, ...walls]);
 
     // Run Renderer
     Render.run(render);
@@ -160,11 +206,7 @@
             shoot -= 1;
             ctx.beginPath();
             ctx.moveTo(gun_front.x, gun_front.y);
-            const end_point = Matter.Vector.add(
-                pos,
-                Matter.Vector.mult(aimDir, MAX_SHOOT_DIST)
-            );
-            ctx.lineTo(end_point.x, end_point.y);
+            ctx.lineTo(pt.x, pt.y);
             ctx.stroke();
         }
 
@@ -190,7 +232,7 @@
         let mi = (lo + hi)/2;
 
         const check = (delta) => {
-            const coll = Matter.Query.ray([wall], startPoint, 
+            const coll = Matter.Query.ray(walls, startPoint, 
                 Matter.Vector.add(
                     startPoint,
                     Matter.Vector.mult(normal, delta)
@@ -200,7 +242,10 @@
         };
 
         if (!check(MAX_SHOOT_DIST)) {
-            return null;
+            return Matter.Vector.add(
+                startPoint,
+                Matter.Vector.mult(normal, MAX_SHOOT_DIST)
+            );
         }
 
         while (lo < hi) {
