@@ -3,65 +3,71 @@ function path() {
     const WIDTH  = 40;
     const HEIGHT = 20;
 
-     // Doors are true if open
-    const doors = (() => {
-        const doors = {};
+    const grid = (() => {
+        const grid = {};
         for (let h = 0; h < HEIGHT; h++) {
             for (let w = 0; w < WIDTH; w++) {
-                doors[hash({x: w, y: h})] = false;
+                grid[hash({x: w, y: h})] = true;
             }
         }
-        return doors;
+        return grid;
     })();
 
     const {union, find} = union_find();
     
-    function path(doors) {
-        const door_keys = Object.keys(doors).sort((a, b) => {
-            return Math.random() > 0.5 ? -1 : 1;
-        });
+    function path(grid) {
+        const doors = (() => {
+            const doors = [];
+            for (let h = 0; h < HEIGHT; h++) {
+                for (let w = 0; w < WIDTH; w++) {
+                    if ((h % 2 === 0) && (w % 2 === 1)) {
+                        doors.push(hash({x: w, y: h}));
 
-        for (let door of door_keys) {
+                    } else if ((h % 2 === 1) && (w % 2 === 0)) {
+                        doors.push(hash({x: w, y: h}));
+
+                    }
+                }
+            }
+            return doors.sort((a, b) => {
+                return Math.random() < 0.5 ? -1 : 1;
+            });
+        })();
+
+        for (let door of doors) {
             const {room_a, room_b} = getRooms(door);
-            //console.log(door);
-            //console.log(room_a);
-            //console.log(room_b);
-            //console.log("");
-            
-            //console.log(find(room_a), find(room_b));
-            //console.log("");
-
             if (find(room_a) !== find(room_b)) {
                 union(room_a, room_b);
-                doors[door] = true;
+                grid[door] = false;
             }
         }
     }
 
-    path(doors);
+    path(grid);
     
     // Render
     function render() {
         let show = [];
-        for (let h = 0; h < 2 * HEIGHT; h++) {
+        for (let h = 0; h < HEIGHT; h++) {
             const row = [];
-            for (let w = 0; w < 2 * WIDTH; w++) {
+            for (let w = 0; w < WIDTH; w++) {
+
                 if ((h % 2 === 0) && (w % 2 === 0)) {
                     row.push("#");
     
-                } else if (h % 2 === 1 && (w % 2 === 1)) {
+                } else if (((h - 1) % 2 === 0) && ((w - 1) % 2 === 0)) {
                     row.push(" ");
-    
+
                 } else {
-                    const ww = Math.floor(w/2);
-                    const hh = Math.floor((h - 1)/2);
-                    if (doors[hash({x: ww, y: hh})]) {
-                        row.push(" ");
-        
-                    } else {
+                    const grid_value = grid[hash({x: w, y: h})];
+                    if (grid_value) {
+                        const type = (h % 2 === 0) ? 1 : 2; 
                         row.push("#");
+                    } else {
+                        row.push(" ");
                     }
                 }
+
             }
             show.push(row);
         }
@@ -70,10 +76,8 @@ function path() {
         console.log(show.join("\n"));
     }
     render();
-    //console.log(find(hash({x: WIDTH - 2, y: HEIGHT - 2})));
-    //console.log(find(hash({x: 2, y: 2})));
 
-    return {doors, width: WIDTH, height: HEIGHT, hash};
+    return {grid, width: WIDTH, height: HEIGHT, hash};
 
     function mod(n, m) {
         const a = n % m;
@@ -85,35 +89,31 @@ function path() {
     function unhash(itemHash) {
         return JSON.parse(itemHash);
     }
-    function getRooms(door_hash) {
-        const {x: dx, y: dy} = unhash(door_hash);
+    function getRooms(door) {
+        const {x: dx, y: dy} = unhash(door);
         if (dy % 2 === 0) {
-            const ddy = Math.floor(dy/2.0);
-            const r1y = mod(ddy - 1, HEIGHT/2);
-            const r2y = mod(ddy, HEIGHT/2);
             return {
-                room_a: hash({x: dx, y: r1y}),
-                room_b: hash({x: dx, y: r2y})
+                room_a: hash({x: dx, y: mod(dy - 1, HEIGHT)}),
+                room_b: hash({x: dx, y: mod(dy + 1, HEIGHT)})
             };
 
         } else {
-            const ddy = Math.floor((dy - 1)/2.0);
-            const r1x = mod(dx - 1, WIDTH/2);
-            const r2x = mod(dx, WIDTH/2);
             return {
-                room_a: hash({x: r1x, y: ddy}),
-                room_b: hash({x: r2x, y: ddy})
+                room_a: hash({x: mod(dx - 1, WIDTH), y: dy}),
+                room_b: hash({x: mod(dx + 1, WIDTH), y: dy})
             };
 
         }
     }
     function union_find() {
-        const rooms = {}; // Rooms point to group they are in
+        const rooms = {};
         
-        for (let h = 0; h < HEIGHT/2; h++) {
-            for (let w = 0; w < WIDTH/2; w++) {
-                const hh = hash({x: w, y: h});
-                rooms[hh] = hh;
+        for (let h = 0; h < HEIGHT; h++) {
+            for (let w = 0; w < WIDTH; w++) {
+                if (((h - 1) % 2 === 0) && ((w - 1) % 2 === 0)) {
+                    const hh = hash({x: w, y: h});
+                    rooms[hh] = hh;
+                }
             }
         }
 

@@ -7,7 +7,7 @@
     canvas.width = `${width}px`;
     canvas.height = `${height}px`;
     const WALL_SIZE = {
-        long: 120,
+        long: 3 * 120,
         short: 40
     };
     
@@ -59,26 +59,28 @@
         }
     });
     
-    const {doors, width: doors_width, height: doors_height, hash} = path();
+    const {grid, width: grid_width, height: grid_height, hash} = path();
     const walls = [];
     
-    for (let h = 0; h < 4 * doors_height; h++) {
-        for (let w = 0; w < 4 * doors_width; w++) {
+    for (let h = 0; h < grid_height; h++) {
+        for (let w = 0; w < grid_width; w++) {
             
-            const {x: wx, y: wy, type} = getCoords({x: w, y: h});
+            const {x: cx, y: cy} = getCoords({x: w, y: h});
 
-            if ((h % 4 === 0) && (w % 4 === 0)) {
+            if ((h % 2 === 0) && (w % 2 === 0)) {
                 walls.push(
-                    makeWall(wx, wy, type)
+                    makeWall(cx, cy, 0)
                 );
+
+            } else if (((h - 1) % 2 === 0) && ((w - 1) % 2 === 0)) {
+                // Empty room
+
             } else {
-                const dw = Math.floor(w/4.0);
-                const dh = Math.floor(h/4.0);
-                const door_value = doors[hash({x: dw, y: dh})];
-                if (door_value) {
-                    if (type === null) continue;
+                const grid_value = grid[hash({x: w, y: h})];
+                if (grid_value) {
+                    const type = (h % 2 === 0) ? 1 : 2;
                     walls.push(
-                        makeWall(wx, wy, type)
+                        makeWall(cx, cy, type)
                     );
                 }
             }
@@ -207,37 +209,34 @@
         };
     }
     function getCoords({x, y}) {
-        const block = WALL_SIZE.short + 3 * WALL_SIZE.long;
-        // Fourth row, permident wall
-        if ((y % 4 === 0) && (x % 4 === 0)) {
+        const block = WALL_SIZE.short + WALL_SIZE.long;
+        if (x % 2 === 0 && y % 2 === 0) {
+            const x2 = Math.floor(x/2);
+            const y2 = Math.floor(y/2);
             return {
-                x: block * Math.floor(x/4),
-                y: block * Math.floor(y/4),
-                type: 0
-            };
-
-        // Fourth row, door
-        } else if (y % 4 === 0) {
-            const mx = (x % 4) - 1;
-            const base = WALL_SIZE.short/2 + WALL_SIZE.long/2;
-            const gx = Math.floor(x/4);
-            const block = WALL_SIZE.short + 3 * WALL_SIZE.long;
-            return {
-                x: base + gx * block + mx * WALL_SIZE.long,
-                y: block * Math.floor(y/4),
-                type: 1
+                x: x2 * block,
+                y: y2 * block
             };
 
         } else {
-            const my = (y % 4) - 1;
-            const base = WALL_SIZE.short/2 + WALL_SIZE.long/2;
-            const gy = Math.floor(y/4);
-            const block = WALL_SIZE.short + 3 * WALL_SIZE.long;            
-            return {
-                x: block * Math.floor(x/4.0),
-                y: base + gy * block + my * WALL_SIZE.long,
-                type: 2
-            };
+            const base = (WALL_SIZE.short + WALL_SIZE.long)/2;
+            if (y % 2 === 0) {
+                const x2 = Math.floor((x - 1)/2);
+                const y2 = Math.floor(y/2);
+                return {
+                    x: base + x2 * block,
+                    y: y2 * block
+                };
+                 
+            } else {
+                const x2 = Math.floor(x/2);
+                const y2 = Math.floor(y/2);
+                return {
+                    x: x2 * block,
+                    y: base + y2 * block
+                };
+            }
+
         }
     }
     function makeWall(x, y, type) {
