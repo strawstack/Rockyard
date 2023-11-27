@@ -1,4 +1,4 @@
-function path() {
+function path(ctx) {
 
     const WIDTH  = 40;
     const HEIGHT = 20;
@@ -15,7 +15,7 @@ function path() {
 
     const {union, find} = union_find();
     
-    function path(grid) {
+    function make_path(grid) {
         const doors = (() => {
             const doors = [];
             for (let h = 0; h < HEIGHT; h++) {
@@ -43,7 +43,7 @@ function path() {
         }
     }
 
-    path(grid);
+    make_path(grid);
     
     // Render
     function render() {
@@ -72,8 +72,16 @@ function path() {
             show.push(row);
         }
     
-        show = show.map(row => row.join(""));
-        console.log(show.join("\n"));
+        //show = show.map(row => row.join(""));
+        //console.log(show.join("\n"));
+        for (let h = 0; h < HEIGHT; h++) {
+            for (let w = 0; w < WIDTH; w++) {
+                if (show[h][w] === "#") {
+                    ctx.fillStyle = "#DDD";
+                    ctx.fillRect(w * 20, h * 20, 20, 20);
+                }
+            }
+        }
     }
     //render();
 

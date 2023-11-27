@@ -7,7 +7,7 @@
     canvas.width = `${width}px`;
     canvas.height = `${height}px`;
     const WALL_SIZE = {
-        long: 3 * 120,
+        long: 120,
         short: 40
     };
     
@@ -59,9 +59,8 @@
         }
     });
     
-    const {grid, width: grid_width, height: grid_height, hash} = path();
+    const {grid, width: grid_width, height: grid_height, hash} = path(ctx);
     const walls = [];
-    
     for (let h = 0; h < grid_height; h++) {
         for (let w = 0; w < grid_width; w++) {
             
