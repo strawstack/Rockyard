@@ -75,7 +75,7 @@ function path() {
         show = show.map(row => row.join(""));
         console.log(show.join("\n"));
     }
-    render();
+    //render();
 
     return {grid, width: WIDTH, height: HEIGHT, hash};
 
