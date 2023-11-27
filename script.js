@@ -6,6 +6,10 @@
     const height = 720;
     canvas.width = `${width}px`;
     canvas.height = `${height}px`;
+    const WALL_SIZE = {
+        long: 120,
+        short: 40
+    };
     
     const ctx = canvas.getContext('2d');
     
@@ -47,7 +51,7 @@
     });
 
     // Bodies
-    var player = Bodies.circle(center.x, center.y, 40, {
+    var player = Bodies.circle(center.x, center.y - 50, 40, {
         render: {
             fillStyle: '#DDD',
             strokeStyle: '#777', 
@@ -55,55 +59,31 @@
         }
     });
     
-    const SIZE = {
-        long: 120,
-        short: 40
-    };
+    const {doors, width: doors_width, height: doors_height, hash} = path();
     const walls = [];
+    
+    for (let h = 0; h < 4 * doors_height; h++) {
+        for (let w = 0; w < 4 * doors_width; w++) {
+            
+            const {x: wx, y: wy, type} = getCoords({x: w, y: h});
 
-    walls.push(
-        Bodies.rectangle(400 - 2 * SIZE.loaang, 200, SIZE.short, SIZE.short, { 
-            isStatic: true,
-            render: {
-                fillStyle: '#AAA',
-                strokeStyle: '#777', 
-                lineWidth: 4
+            if ((h % 4 === 0) && (w % 4 === 0)) {
+                walls.push(
+                    makeWall(wx, wy, type)
+                );
+            } else {
+                const dw = Math.floor(w/4.0);
+                const dh = Math.floor(h/4.0);
+                const door_value = doors[hash({x: dw, y: dh})];
+                if (door_value) {
+                    if (type === null) continue;
+                    walls.push(
+                        makeWall(wx, wy, type)
+                    );
+                }
             }
-        })
-    );
-
-    walls.push(
-        Bodies.rectangle(400 - SIZE.long, 200, SIZE.long, SIZE.short, { 
-            isStatic: true,
-            render: {
-                fillStyle: '#AAA',
-                strokeStyle: '#777', 
-                lineWidth: 4
-            }
-        })
-    );
-
-    walls.push(
-        Bodies.rectangle(400, 200, SIZE.long, SIZE.short, { 
-            isStatic: true,
-            render: {
-                fillStyle: '#AAA',
-                strokeStyle: '#777', 
-                lineWidth: 4
-            }
-        })
-    );
-
-    walls.push(
-        Bodies.rectangle(400 + SIZE.long, 200, SIZE.long, SIZE.short, { 
-            isStatic: true,
-            render: {
-                fillStyle: '#AAA',
-                strokeStyle: '#777', 
-                lineWidth: 4
-            }
-        })
-    );
+        }
+    }
 
     // Add Bodies to world
     Composite.add(engine.world, [player, ...walls]);
@@ -225,6 +205,55 @@
             x: m.position.x + offset.x,
             y: m.position.y + offset.y
         };
+    }
+    function getCoords({x, y}) {
+        const block = WALL_SIZE.short + 3 * WALL_SIZE.long;
+        // Fourth row, permident wall
+        if ((y % 4 === 0) && (x % 4 === 0)) {
+            return {
+                x: block * Math.floor(x/4),
+                y: block * Math.floor(y/4),
+                type: 0
+            };
+
+        // Fourth row, door
+        } else if (y % 4 === 0) {
+            const mx = (x % 4) - 1;
+            const base = WALL_SIZE.short/2 + WALL_SIZE.long/2;
+            const gx = Math.floor(x/4);
+            const block = WALL_SIZE.short + 3 * WALL_SIZE.long;
+            return {
+                x: base + gx * block + mx * WALL_SIZE.long,
+                y: block * Math.floor(y/4),
+                type: 1
+            };
+
+        } else {
+            const my = (y % 4) - 1;
+            const base = WALL_SIZE.short/2 + WALL_SIZE.long/2;
+            const gy = Math.floor(y/4);
+            const block = WALL_SIZE.short + 3 * WALL_SIZE.long;            
+            return {
+                x: block * Math.floor(x/4.0),
+                y: base + gy * block + my * WALL_SIZE.long,
+                type: 2
+            };
+        }
+    }
+    function makeWall(x, y, type) {
+        const {width, height} = [
+            {width: WALL_SIZE.short, height: WALL_SIZE.short},
+            {width: WALL_SIZE.long, height: WALL_SIZE.short},
+            {width: WALL_SIZE.short, height: WALL_SIZE.long}
+        ][type];
+        return Bodies.rectangle(x, y, width, height, { 
+            isStatic: true,
+            render: {
+                fillStyle: '#AAA',
+                strokeStyle: '#777',
+                lineWidth: 1 // Debug only
+            }
+        });
     }
     function rayCast(startPoint, normal) {
         let lo = 0;
