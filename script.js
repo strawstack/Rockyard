@@ -6,10 +6,6 @@
     const height = 720;
     canvas.width = `${width}px`;
     canvas.height = `${height}px`;
-    const WALL_SIZE = {
-        long: 120,
-        short: 40
-    };
     
     const ctx = canvas.getContext('2d');
     
@@ -51,7 +47,7 @@
     });
 
     // Bodies
-    var player = Bodies.circle(center.x, center.y - 50, 40, {
+    var player = Bodies.circle(center.x, center.y, 40, {
         render: {
             fillStyle: '#DDD',
             strokeStyle: '#777', 
@@ -59,32 +55,7 @@
         }
     });
     
-    const {grid, width: grid_width, height: grid_height, hash} = path(ctx);
-    const walls = [];
-    for (let h = 0; h < grid_height; h++) {
-        for (let w = 0; w < grid_width; w++) {
-            
-            const {x: cx, y: cy} = getCoords({x: w, y: h});
-
-            if ((h % 2 === 0) && (w % 2 === 0)) {
-                walls.push(
-                    makeWall(cx, cy, 0)
-                );
-
-            } else if (((h - 1) % 2 === 0) && ((w - 1) % 2 === 0)) {
-                // Empty room
-
-            } else {
-                const grid_value = grid[hash({x: w, y: h})];
-                if (grid_value) {
-                    const type = (h % 2 === 0) ? 1 : 2;
-                    walls.push(
-                        makeWall(cx, cy, type)
-                    );
-                }
-            }
-        }
-    }
+    const walls = rooms(Bodies);
 
     // Add Bodies to world
     Composite.add(engine.world, [player, ...walls]);
@@ -206,52 +177,6 @@
             x: m.position.x + offset.x,
             y: m.position.y + offset.y
         };
-    }
-    function getCoords({x, y}) {
-        const block = WALL_SIZE.short + WALL_SIZE.long;
-        if (x % 2 === 0 && y % 2 === 0) {
-            const x2 = Math.floor(x/2);
-            const y2 = Math.floor(y/2);
-            return {
-                x: x2 * block,
-                y: y2 * block
-            };
-
-        } else {
-            const base = (WALL_SIZE.short + WALL_SIZE.long)/2;
-            if (y % 2 === 0) {
-                const x2 = Math.floor((x - 1)/2);
-                const y2 = Math.floor(y/2);
-                return {
-                    x: base + x2 * block,
-                    y: y2 * block
-                };
-                 
-            } else {
-                const x2 = Math.floor(x/2);
-                const y2 = Math.floor(y/2);
-                return {
-                    x: x2 * block,
-                    y: base + y2 * block
-                };
-            }
-
-        }
-    }
-    function makeWall(x, y, type) {
-        const {width, height} = [
-            {width: WALL_SIZE.short, height: WALL_SIZE.short},
-            {width: WALL_SIZE.long, height: WALL_SIZE.short},
-            {width: WALL_SIZE.short, height: WALL_SIZE.long}
-        ][type];
-        return Bodies.rectangle(x, y, width, height, { 
-            isStatic: true,
-            render: {
-                fillStyle: '#AAA',
-                strokeStyle: '#777',
-                lineWidth: 1 // Debug only
-            }
-        });
     }
     function rayCast(startPoint, normal) {
         let lo = 0;
