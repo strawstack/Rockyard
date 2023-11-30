@@ -55,7 +55,7 @@
         }
     });
     
-    const walls = rooms(Bodies);
+    const walls = rooms({width, height}, Bodies);
 
     // Add Bodies to world
     Composite.add(engine.world, [player, ...walls]);
